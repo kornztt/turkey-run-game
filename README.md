@@ -37,9 +37,9 @@ picture is drawn fresh on canvas and every sound is synthesised with WebAudio.
 - `game/src/input.js` — keyboard and mouse
 - `game/src/art.js` — all canvas art: turkey, farmer, oven, knife, farm and kitchen
 - `game/src/world.js` — entities, spawning, collisions, the farmer's AI
-- `game/src/shots.js` — deterministic screenshot scenes (`?shot=title|play|kitchen|caught|escaped`)
+- `game/src/shots.js` — deterministic screenshot scenes (`?shot=title|play|hide|kitchen|caught|escaped`)
 - `game/src/main.js` — game loop and screens
-- `screenshots/` — real renders of the game
+- `screenshots/` — real renders of the game (title, farmyard chase, hiding in a haystack, escaped)
 
 ## Run it
 

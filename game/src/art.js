@@ -200,14 +200,18 @@
       ctx.restore();
     },
     drawKnife: function (ctx, x, y, rot) {
-      // y = tip position; knife points down
+      // y = tip position; knife points down. Drawn big with a dark outline
+      // so it reads against the orange sky instead of a thin white sliver.
       ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
       ctx.fillStyle = '#c0c0c0';
-      ctx.beginPath(); ctx.moveTo(-11, -96); ctx.lineTo(11, -96); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-17, -130); ctx.lineTo(17, -130); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 3; ctx.stroke();
       ctx.fillStyle = '#e8e8e8';
-      ctx.beginPath(); ctx.moveTo(-11, -96); ctx.lineTo(-3, -96); ctx.lineTo(0, -8); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-17, -130); ctx.lineTo(-5, -130); ctx.lineTo(0, -10); ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#5a3a1a';
-      rr(ctx, -13, -132, 26, 38, 8); ctx.fill();
+      rr(ctx, -18, -172, 36, 44, 9); ctx.fill();
+      ctx.strokeStyle = '#2b1a0e'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-18, -150); ctx.lineTo(18, -150); ctx.stroke();
       ctx.restore();
     },
     drawRollingPin: function (ctx, x, y, rot) {
@@ -271,10 +275,34 @@
       }
       // clouds
       ctx.fillStyle = 'rgba(255,248,235,0.9)';
-      [[200, 90], [560, 60], [900, 150]].forEach(function (p, k) {
+      [[200, 90], [560, 60], [900, 150], [80, 200], [1150, 70]].forEach(function (p, k) {
         var cx = ((p[0] - scroll * 0.08 + k * 400) % 1400 + 1400) % 1400 - 60;
         ellipse(ctx, cx, p[1], 70, 22, 0); ellipse(ctx, cx + 44, p[1] + 8, 48, 18, 0); ellipse(ctx, cx - 44, p[1] + 8, 44, 16, 0);
       });
+      // birds crossing the upper sky
+      ctx.strokeStyle = 'rgba(90,40,10,0.75)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      [[300, 210], [700, 170], [1020, 240]].forEach(function (p, k) {
+        var bx = ((p[0] - scroll * 0.12 + k * 300) % 1400 + 1400) % 1400 - 60;
+        var flap = Math.sin(t * 0.12 + k * 2) * 4;
+        ctx.beginPath();
+        ctx.moveTo(bx - 14, p[1] + flap); ctx.quadraticCurveTo(bx, p[1] - 8, bx + 14, p[1] + flap);
+        ctx.stroke();
+      });
+      // rolling midground hills behind the tree line
+      ctx.fillStyle = 'rgba(190,110,40,0.55)';
+      ctx.beginPath(); ctx.ellipse(320, 606, 430, 92, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(1020, 612, 500, 100, 0, 0, Math.PI * 2); ctx.fill();
+      // midground tree line (parallax 0.45): fills the empty band above the fence
+      for (var mk = 0; mk < 7; mk++) {
+        var mx = ((mk * 230 + 90 - scroll * 0.45) % 1610 + 1610) % 1610 - 165;
+        var my = 528 + (mk % 3) * 14;
+        ctx.fillStyle = '#7a3b12';
+        ctx.fillRect(mx - 5, my, 10, 72);
+        ctx.fillStyle = ['#b5651d', '#d2691e', '#c97b2d'][mk % 3];
+        ctx.beginPath(); ctx.arc(mx, my - 18, 34, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(mx - 24, my + 2, 22, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(mx + 24, my + 2, 22, 0, Math.PI * 2); ctx.fill();
+      }
       // distant barn + trees
       var barnX = ((420 - scroll * 0.25) % 1600 + 1600) % 1600 - 160;
       ctx.fillStyle = '#a83232';
@@ -444,8 +472,35 @@
     drawEnd: function (ctx, s, t) {
       ctx.save();
       // opaque backdrop: the run behind is never shown on the end screen
-      ctx.fillStyle = s.endKind === 'escaped' ? '#1d3a1d' : '#3a1414';
-      ctx.fillRect(0, 0, 1280, 720);
+      var g = ctx.createLinearGradient(0, 0, 0, 720);
+      if (s.endKind === 'escaped') { g.addColorStop(0, '#2d5a27'); g.addColorStop(0.7, '#1d3a1d'); g.addColorStop(1, '#142b12'); }
+      else { g.addColorStop(0, '#571d1d'); g.addColorStop(0.7, '#3a1414'); g.addColorStop(1, '#2b0e0e'); }
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 1280, 720);
+      if (s.endKind === 'escaped') {
+        // falling confetti (fixed pattern, drifts with t)
+        var confCols = ['#ffb703', '#ff6b6b', '#80b918', '#fff3b0', '#f4845f', '#e9c46a'];
+        for (var ci = 0; ci < 48; ci++) {
+          var cx = (ci * 263 + 37) % 1280;
+          var cy = ((ci * 173 + 53 + t * 0.55) % 760) - 20;
+          ctx.save(); ctx.translate(cx, cy); ctx.rotate((ci * 0.7 + t * 0.01) % Math.PI);
+          ctx.fillStyle = confCols[ci % confCols.length];
+          ctx.fillRect(-7, -4, 14, 8); ctx.restore();
+        }
+      }
+      // farm ground strip + fence + barn silhouette, so the screen is not bare
+      ctx.fillStyle = s.endKind === 'escaped' ? '#2d5a27' : '#4a1f1f';
+      ctx.fillRect(0, 620, 1280, 100);
+      ctx.fillStyle = s.endKind === 'escaped' ? '#3a6b32' : '#5a2626';
+      ctx.fillRect(0, 620, 1280, 10);
+      ctx.fillStyle = s.endKind === 'escaped' ? '#1d3a1d' : '#2b0e0e';
+      ctx.fillRect(1020, 540, 170, 80);
+      ctx.beginPath(); ctx.moveTo(1008, 540); ctx.lineTo(1105, 490); ctx.lineTo(1202, 540); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = s.endKind === 'escaped' ? '#7a3b12' : '#3a1a1a';
+      ctx.fillRect(1090, 620, 10, 100);
+      ctx.beginPath(); ctx.arc(1095, 510, 34, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#6b4423';
+      for (var fx = 20; fx < 1280; fx += 90) ctx.fillRect(fx, 622, 10, 34);
+      ctx.fillRect(0, 632, 1280, 7); ctx.fillRect(0, 646, 1280, 7);
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (s.endKind === 'escaped') {
         ctx.fillStyle = '#80b918';
@@ -454,7 +509,7 @@
         ctx.fillStyle = '#fff';
         ctx.font = '30px system-ui, sans-serif';
         ctx.fillText('Free at last — no Thanksgiving dinner for you!', 640, 172);
-        Art.drawTurkey(ctx, 640, 500, 1.1, Math.sin(t * 0.08) * 0.5, false, false);
+        Art.drawTurkey(ctx, 640, 500, 0.9, Math.sin(t * 0.08) * 0.5, false, false);
       } else {
         ctx.fillStyle = '#ff6b6b';
         ctx.font = 'bold 84px system-ui, sans-serif';
@@ -466,15 +521,16 @@
       }
       ctx.fillStyle = '#ffe9b0';
       ctx.font = 'bold 36px system-ui, sans-serif';
-      ctx.fillText('SCORE  ' + Math.floor(s.score) + '    ·    DISTANCE  ' + Math.floor(s.distanceM) + ' m', 640, 560);
+      ctx.fillText('SCORE  ' + Math.floor(s.score) + '    ·    DISTANCE  ' + Math.floor(s.distanceM) + ' m', 640, 556);
       ctx.fillStyle = '#fff';
       ctx.font = '26px system-ui, sans-serif';
-      ctx.fillText('Best score this session: ' + s.bestScore, 640, 606);
-      var pulse = 0.65 + Math.sin(t * 0.09) * 0.35;
-      ctx.globalAlpha = pulse;
-      ctx.font = 'bold 30px system-ui, sans-serif';
-      ctx.fillText('PRESS R OR CLICK TO RUN AGAIN', 640, 664);
-      ctx.globalAlpha = 1;
+      ctx.fillText('Best score this session: ' + s.bestScore, 640, 600);
+      // restart prompt: bright yellow with a dark outline, no fading pulse
+      ctx.font = 'bold 32px system-ui, sans-serif';
+      ctx.strokeStyle = '#142b12'; ctx.lineWidth = 7;
+      ctx.strokeText('PRESS R OR CLICK TO RUN AGAIN', 640, 678);
+      ctx.fillStyle = '#ffb703';
+      ctx.fillText('PRESS R OR CLICK TO RUN AGAIN', 640, 678);
       ctx.restore();
     },
 

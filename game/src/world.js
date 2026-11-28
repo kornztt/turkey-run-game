@@ -283,16 +283,34 @@
     });
     // farmer (behind the turkey on screen)
     var farmerX = run.turkeyX - run.farmerGap - 60;
-    Art.drawFarmer(ctx, farmerX, CFG.GROUND_Y, 1.05, run.phase * 1.15, run.farmerState === 'search');
-    // turkey
+    Art.drawFarmer(ctx, farmerX, CFG.GROUND_Y, 0.9, run.phase * 1.15, run.farmerState === 'search');
+    // turkey (drawn smaller than the collision box so it reads at a distance)
     var blink = now < run.invulnUntil && Math.floor(now / 120) % 2 === 0;
-    if (!blink) Art.drawTurkey(ctx, run.turkeyX, run.turkeyY, 1.0, run.phase, run.sliding, hidden);
-    // hiding: turkey inside the haystack, show a feather tuft
+    if (!blink) Art.drawTurkey(ctx, run.turkeyX, run.turkeyY, 0.72, run.phase, run.sliding, hidden);
+    // hiding: turkey inside the haystack, show a feather tuft on that haystack
+    // (the tuft rides the haystack, not the turkey's fixed x, so it never
+    // floats in mid-air once the haystack has scrolled past)
     if (hidden) {
+      var hideX = run.turkeyX;
+      var bestD = 1e9;
+      run.entities.forEach(function (e) {
+        if (e.kind === 'haystack') {
+          var d = Math.abs(e.x - run.turkeyX);
+          if (d < bestD) { bestD = d; hideX = e.x; }
+        }
+      });
       ctx.save();
-      ctx.translate(run.turkeyX, CFG.GROUND_Y - 120);
+      ctx.translate(hideX, CFG.GROUND_Y - 120);
       ctx.fillStyle = '#8b5a2b';
       ctx.beginPath(); ctx.ellipse(0, 0, 26, 12, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 30px system-ui, sans-serif';
+      ctx.strokeStyle = 'rgba(43,26,14,0.9)'; ctx.lineWidth = 6;
+      ctx.strokeText('HIDDEN IN THE HAY!', 640, 200);
+      ctx.fillStyle = '#ffe9b0';
+      ctx.fillText('HIDDEN IN THE HAY!', 640, 200);
       ctx.restore();
     }
     // HUD
